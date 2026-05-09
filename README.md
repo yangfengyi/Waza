@@ -46,27 +46,13 @@ Each skill is a folder with reference docs, helper scripts, and gotchas from rea
 
 Most users should install Waza globally, so the same skills are available in every project.
 
-**Claude Code direct slash commands**
+**Claude Code**
 
 ```bash
 npx skills add tw93/Waza -a claude-code -g -y
 ```
 
-This installs the individual `/think`, `/design`, `/check`, `/hunt`, `/write`, `/learn`, `/read`, and `/health` skills. Install just one with `--skill`:
-
-```bash
-npx skills add tw93/Waza --skill think -a claude-code -g -y
-```
-
-**Claude Code plugin marketplace**
-
-Install all skills via the `waza` bundle, or just one via a `waza-<skill>` entry:
-
-```bash
-/plugin marketplace add tw93/Waza
-/plugin install waza@waza
-/plugin install waza-think@waza
-```
+This installs `/think`, `/design`, `/check`, `/hunt`, `/write`, `/learn`, `/read`, and `/health`. Install just one with `npx skills add tw93/Waza --skill think -a claude-code -g -y`.
 
 **Codex**
 
@@ -74,21 +60,16 @@ Install all skills via the `waza` bundle, or just one via a `waza-<skill>` entry
 npx skills add tw93/Waza -a codex -g -y
 ```
 
-Install just one with `--skill`:
+Install just one with `npx skills add tw93/Waza --skill think -a codex -g -y`. Codex sessions can also reference installed skills by inline link, using `~/.claude/skills/waza/skills/<name>/SKILL.md`.
+
+**Claude Code plugin marketplace**
 
 ```bash
-npx skills add tw93/Waza --skill think -a codex -g -y
+/plugin marketplace add tw93/Waza
+/plugin install waza@waza
 ```
 
-**Codex inline link invocation**
-
-After installing with `npx skills add tw93/Waza -a codex -g -y`, Codex sessions can reference skills via inline markdown links. The canonical install path is `~/.claude/skills/waza/skills/<name>/SKILL.md`:
-
-```markdown
-[$check](~/.claude/skills/waza/skills/check/SKILL.md) — review before ship
-[$hunt](~/.claude/skills/waza/skills/hunt/SKILL.md) — diagnose the regression
-[$think](~/.claude/skills/waza/skills/think/SKILL.md) — plan before build
-```
+Use the bundle for now. Per-skill marketplace entries like `waza-think@waza` are temporarily affected by a Claude Code v2.1.136+ path-validation regression; until upstream fixes it, install one skill with the `npx skills add ... --skill` path above.
 
 **Claude Desktop**
 
@@ -104,7 +85,7 @@ Marketplace installs use `claude plugin update <skill>`. Claude Desktop users ca
 
 **Compatibility**
 
-`/health` is Claude Code only. It defaults to a summary audit to avoid burning quota on first run; ask for a deep or full health audit when you want full conversation extracts and inspector subagents. The other skills are written to use the host environment's native question, search, fetch, and agent mechanisms. `/check` runs parallel specialist reviewers when the host supports them; otherwise it performs the same passes inline.
+`/health` is Claude Code only and defaults to a summary audit. Other skills use the host environment's native question, search, fetch, and agent mechanisms.
 
 ## Project Context
 
@@ -135,12 +116,6 @@ Each arrow represents a manual user action. Skills don't automatically trigger e
 
 A minimal statusline for Claude Code: context window, 5-hour quota, and 7-day quota.
 
-<div align="center">
-  <img src="https://gw.alipayobjects.com/zos/k/y9/RUgevg.png" width="1000" />
-</div>
-
-Color coding: green below 70%, yellow at 70-85%, red above 85% for context; blue, magenta, red for quota thresholds. No progress bars, no noise.
-
 ```bash
 curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-statusline.sh | bash
 ```
@@ -149,53 +124,32 @@ curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-statusli
 
 Optional rule for English practice. When your prompt contains an English mistake, the agent appends a short 😇 correction; Chinese-only prompts stay untouched.
 
-<div align="center">
-  <img src="https://gw.alipayobjects.com/zos/k/24/vfkGOi.png" width="1000" />
-</div>
-
 ```bash
-# Claude Code
 curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-english-coaching.sh | bash -s -- claude-code
-
-# Codex
-curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-english-coaching.sh | bash -s -- codex
 ```
+
+Use `codex` instead of `claude-code` for Codex.
 
 ### Anti-Patterns
 
 Optional always-on guardrails for cross-skill behaviors: stop acting before reading, no hallucinated paths, no scope creep, no unsolicited summaries. Skill-agnostic, applies in every session.
 
 ```bash
-# Claude Code
 curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-anti-patterns.sh | bash -s -- claude-code
-
-# Codex
-curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-anti-patterns.sh | bash -s -- codex
 ```
+
+Use `codex` instead of `claude-code` for Codex.
 
 ## Uninstall
 
 ```bash
-# Remove all skills
 npx skills remove tw93/Waza -g
-
-# Remove Claude Desktop skill
-# Open Customize > Skills, find Waza, click "..." > Delete
-
-# Remove statusline
 rm -f ~/.claude/statusline.sh
-# Then remove the statusLine key from ~/.claude/settings.json
-
-# Remove English Coaching (Claude Code)
 rm -f ~/.claude/rules/english.md
-
-# Remove English Coaching (Codex): remove the Waza English Coaching marked block from ~/.codex/AGENTS.md
-
-# Remove Anti-Patterns (Claude Code)
 rm -f ~/.claude/rules/anti-patterns.md
-
-# Remove Anti-Patterns (Codex): remove the Waza Anti-Patterns marked block from ~/.codex/AGENTS.md
 ```
+
+For Claude Desktop, delete Waza from Customize > Skills. For Codex rule installs, remove the marked Waza block from `~/.codex/AGENTS.md`.
 
 ## Background
 
