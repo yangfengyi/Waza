@@ -116,6 +116,12 @@ Each arrow represents a manual user action. Skills don't automatically trigger e
 
 A minimal statusline for Claude Code: context window, 5-hour quota, and 7-day quota.
 
+<div align="center">
+  <img src="https://gw.alipayobjects.com/zos/k/y9/RUgevg.png" width="1000" />
+</div>
+
+Color coding: green below 70%, yellow at 70-85%, red above 85% for context; blue, magenta, red for quota thresholds. No progress bars, no noise.
+
 ```bash
 curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-statusline.sh | bash
 ```
@@ -124,11 +130,17 @@ curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-statusli
 
 Optional rule for English practice. When your prompt contains an English mistake, the agent appends a short 😇 correction; Chinese-only prompts stay untouched.
 
-```bash
-curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-english-coaching.sh | bash -s -- claude-code
-```
+<div align="center">
+  <img src="https://gw.alipayobjects.com/zos/k/24/vfkGOi.png" width="1000" />
+</div>
 
-Use `codex` instead of `claude-code` for Codex.
+```bash
+# Claude Code
+curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-english-coaching.sh | bash -s -- claude-code
+
+# Codex
+curl -sL https://raw.githubusercontent.com/tw93/Waza/main/scripts/setup-english-coaching.sh | bash -s -- codex
+```
 
 ### Anti-Patterns
 

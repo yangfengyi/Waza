@@ -10,7 +10,7 @@
     {
       "name": "waza",
       "description": "Installs the full Waza toolkit. Registers all eight skills under the waza namespace, callable as /waza:think, /waza:check, /waza:hunt, /waza:design, /waza:read, /waza:write, /waza:learn, and /waza:health. Not for users who only want one skill — install a waza-<skill>@waza entry instead.",
-      "version": "3.22.0",
+      "version": "3.23.0",
       "category": "development",
       "source": "./",
       "homepage": "https://github.com/tw93/Waza"
@@ -18,7 +18,7 @@
     {
       "name": "waza-health",
       "description": "Runs a budget-aware audit of the Claude Code config stack when Claude ignores instructions, behaves inconsistently, hooks malfunction, MCP servers need auditing, or users ask why /health used many tokens. Flags issues by severity. Not for debugging code or reviewing PRs.",
-      "version": "3.17.0",
+      "version": "3.18.0",
       "category": "development",
       "source": "./skills/health",
       "homepage": "https://github.com/tw93/Waza",
@@ -28,7 +28,7 @@
     {
       "name": "waza-think",
       "description": "Turns rough ideas into approved, decision-complete plans with validated structure before writing code. Covers new features, architecture decisions, and value judgments about whether to build, keep, or remove something. Not for bug fixes or small edits.",
-      "version": "3.17.0",
+      "version": "3.18.0",
       "category": "development",
       "source": "./skills/think",
       "homepage": "https://github.com/tw93/Waza",
@@ -38,7 +38,7 @@
     {
       "name": "waza-check",
       "description": "Reviews code diffs and release-ready changes after implementation, executes approved implementation plans, extracts project-specific constraints from repository context, auto-fixes safe issues, and drives approved release, publish, push, release-reaction, and issue/PR follow-through. Also triages issues and PRs when the user mentions them. Not for exploring ideas, debugging, or document prose review.",
-      "version": "3.22.0",
+      "version": "3.23.0",
       "category": "development",
       "source": "./skills/check",
       "homepage": "https://github.com/tw93/Waza",
@@ -48,7 +48,7 @@
     {
       "name": "waza-hunt",
       "description": "Finds root cause of errors, crashes, regressions, screenshot-reported defects, unexpected behavior, and failing tests before applying any fix. Not for code review or new features.",
-      "version": "3.19.0",
+      "version": "3.20.0",
       "category": "development",
       "source": "./skills/hunt",
       "homepage": "https://github.com/tw93/Waza",
@@ -58,7 +58,7 @@
     {
       "name": "waza-design",
       "description": "Produces distinctive, production-grade UI for any component, page, or visual interface. Handles screenshot-driven iteration when the user sends an image with a visual complaint. Not for backend logic or data pipelines.",
-      "version": "3.19.0",
+      "version": "3.20.0",
       "category": "development",
       "source": "./skills/design",
       "homepage": "https://github.com/tw93/Waza",
@@ -78,7 +78,7 @@
     {
       "name": "waza-write",
       "description": "Strips AI writing patterns and rewrites prose to sound natural in Chinese or English. Only activates on explicit writing or editing requests. Not for code comments, commit messages, or inline docs.",
-      "version": "3.19.0",
+      "version": "3.20.0",
       "category": "development",
       "source": "./skills/write",
       "homepage": "https://github.com/tw93/Waza",

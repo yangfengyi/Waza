@@ -234,6 +234,44 @@ for skill, description in sorted(skill_descriptions.items()):
         )
     print(f"ok: description {skill} ({length} chars)")
 
+# Durable context rules must stay portable and evidence-bound. They are useful
+# as private task context, but cannot bake in one machine's memory path or
+# replace current-state verification.
+personal_path_pattern = re.compile(r'/(?:Users|home)/[A-Za-z0-9._-]+/')
+durable_context_skills = {"think", "check", "hunt", "design", "write", "health"}
+for path in skill_files:
+    skill = path.parent.name
+    text = path.read_text()
+    if personal_path_pattern.search(text):
+        fail(
+            f"PERSONAL ABSOLUTE PATH IN SKILL: {path}\n"
+            f"  Skill docs must not hard-code personal home-directory paths. "
+            f"Use user-provided paths, project-relative paths, or resolver commands instead."
+        )
+
+    has_section = "## Durable Context Preflight" in text
+    if skill in durable_context_skills and not has_section:
+        fail(
+            f"MISSING DURABLE CONTEXT PREFLIGHT: {path}\n"
+            f"  This skill must explain how to consume optional memory/preview context."
+        )
+    if not has_section:
+        continue
+
+    section = text.split("## Durable Context Preflight", 1)[1]
+    section = section.split("\n## ", 1)[0].lower()
+    if "current state" not in section or "override" not in section:
+        fail(
+            f"DURABLE CONTEXT NOT EVIDENCE-BOUND: {path}\n"
+            f"  Memory/context rules must say current state is verified and overrides stale memory."
+        )
+    if "raw transcripts" not in section:
+        fail(
+            f"DURABLE CONTEXT MAY OVERREAD: {path}\n"
+            f"  Durable context rules must forbid reading raw transcripts by default."
+        )
+    print(f"ok: durable context preflight for {skill}")
+
 # RESOLVER.md coverage: every skill must be referenced from the central routing
 # table at skills/RESOLVER.md. Keeps the human-readable index in lock-step with
 # the SKILL.md descriptions the model actually sees.
