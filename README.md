@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://gw.alipayobjects.com/zos/k/2h/waza.svg" width="120" />
   <h1>Waza</h1>
-  <p><b>Engineering habits you already know, turned into skills Claude can run.</b></p>
+  <p><b>Engineering habits you already know, turned into skills AI agents can run.</b></p>
   <a href="https://github.com/tw93/Waza/actions/workflows/test.yml"><img src="https://img.shields.io/github/actions/workflow/status/tw93/Waza/test.yml?branch=main&style=flat-square&label=tests" alt="Tests"></a>
   <a href="https://github.com/tw93/Waza/stargazers"><img src="https://img.shields.io/github/stars/tw93/Waza?style=flat-square" alt="Stars"></a>
   <a href="https://github.com/tw93/Waza/releases"><img src="https://img.shields.io/github/v/tag/tw93/Waza?label=version&style=flat-square" alt="Version"></a>
@@ -38,7 +38,7 @@ Each engineering habit gets an installed skill. In Claude Code, type the slash c
 | [`/write`](skills/write/SKILL.md) | Writing or editing prose | Rewrites prose to sound natural in Chinese and English. Cuts stiff, formulaic phrasing. |
 | [`/learn`](skills/learn/SKILL.md) | Diving into an unfamiliar domain | Six-phase research workflow: collect, digest, outline, fill in, refine, then self-review and publish. |
 | [`/read`](skills/read/SKILL.md) | Any URL or PDF | Fetches content as clean Markdown with platform-specific routing. Special handling for GitHub, PDFs, WeChat, and Feishu. |
-| [`/health`](skills/health/SKILL.md) | Auditing Claude Code setup | Checks CLAUDE.md, rules, skills, hooks, MCP, and behavior with a budget-aware summary pass before deep inspection. |
+| [`/health`](skills/health/SKILL.md) | Auditing Agent Health | Checks Codex, Claude Code, project instructions, verifier output, and AI maintainability with a budget-aware summary pass before deep inspection. |
 
 Each skill is a folder with reference docs, helper scripts, and gotchas from real failures.
 
@@ -60,7 +60,7 @@ This installs `/think`, `/design`, `/check`, `/hunt`, `/write`, `/learn`, `/read
 npx skills add tw93/Waza -a codex -g -y
 ```
 
-Install just one with `npx skills add tw93/Waza --skill think -a codex -g -y`. Codex sessions can also reference installed skills by inline link, using `~/.claude/skills/waza/skills/<name>/SKILL.md`.
+Install just one with `npx skills add tw93/Waza --skill think -a codex -g -y`. Codex sessions can invoke installed skills by name or link to the installed `SKILL.md` path shown by `npx skills path tw93/Waza`.
 
 **Claude Code plugin marketplace**
 
@@ -85,7 +85,7 @@ Marketplace installs use `claude plugin update <skill>`. Claude Desktop users ca
 
 **Compatibility**
 
-`/health` is Claude Code only and defaults to a summary audit. Other skills use the host environment's native question, search, fetch, and agent mechanisms.
+`/health` now supports Agent Health for both Claude Code and Codex. It understands `AGENTS.md`, `CLAUDE.md`, Copilot/Gemini instruction files, Codex config summaries, Claude hooks/MCP when present, verifier logs, and AI maintainability signals. It defaults to summary mode and only deepens when you ask for a deep/full audit or when the summary pass cannot classify the risk.
 
 ## Project Context
 
@@ -173,11 +173,11 @@ Eight skills for the habits that actually matter. Each does one thing, has a cle
 
 Built from patterns across real projects, refined through actual use. Every gotcha traces to a real failure: a wrong code path that took four rounds to find, a release posted before artifacts were uploaded, a server restarted eight times without reading the error. 30 days, 300+ sessions, 7 projects, 500 hours.
 
-The `/health` skill is based on the six-layer framework described in [this post](https://tw93.fun/en/2026-03-12/claude.html).
+The `/health` skill grew from the six-layer Claude Code framework described in [this post](https://tw93.fun/en/2026-03-12/claude.html), and now extends it into Agent Health for Codex, Claude Code, verifier surfaces, and AI maintainability.
 
 ## Support
 
-- If Waza helped you, [share it](https://twitter.com/intent/tweet?url=https://github.com/tw93/Waza&text=Waza%20-%20Claude%20Code%20skills%20for%20the%20complete%20engineer.) with friends or give it a star.
+- If Waza helped you, [share it](https://twitter.com/intent/tweet?url=https://github.com/tw93/Waza&text=Waza%20-%20AI%20coding%20skills%20for%20the%20complete%20engineer.) with friends or give it a star.
 - Got ideas or bugs? Open an issue or PR, feel free to contribute your best AI model.
 - I have two cats, TangYuan and Coke. If you think Waza delights your life, you can feed them <a href="https://cats.tw93.fun?name=Waza" target="_blank">canned food 🥩</a>.
 

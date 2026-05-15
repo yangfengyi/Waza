@@ -1,8 +1,8 @@
 PROJECT_KEY := $(shell printf '%s' "$(CURDIR)" | sed 's|[/_]|-|g; s|^-||')
 
-.PHONY: test verify-docs verify-scripts verify-routing smoke-statusline smoke-statusline-installer smoke-english-coaching-installer smoke-anti-patterns-installer smoke-verify-skills smoke-package smoke-health package
+.PHONY: test verify-docs verify-scripts verify-routing smoke-statusline smoke-statusline-installer smoke-english-coaching-installer smoke-anti-patterns-installer smoke-doc-refs smoke-agent-context smoke-maintainability smoke-verifier-output smoke-verify-skills smoke-package smoke-health package
 
-test: verify-docs verify-routing verify-scripts smoke-statusline smoke-statusline-installer smoke-english-coaching-installer smoke-anti-patterns-installer smoke-verify-skills smoke-package smoke-health
+test: verify-docs verify-routing verify-scripts smoke-statusline smoke-statusline-installer smoke-english-coaching-installer smoke-anti-patterns-installer smoke-doc-refs smoke-agent-context smoke-maintainability smoke-verifier-output smoke-verify-skills smoke-package smoke-health
 
 verify-docs:
 	./scripts/verify-skills.sh
@@ -12,7 +12,7 @@ verify-routing:
 
 verify-scripts:
 	git diff --check
-	bash -n scripts/statusline.sh skills/health/scripts/collect-data.sh skills/read/scripts/fetch.sh scripts/setup-statusline.sh scripts/setup-english-coaching.sh scripts/setup-anti-patterns.sh skills/check/scripts/run-tests.sh scripts/package-skill.sh
+	bash -n scripts/statusline.sh skills/health/scripts/collect-data.sh skills/health/scripts/check-agent-context.sh skills/health/scripts/check-doc-refs.sh skills/health/scripts/check-maintainability.sh skills/health/scripts/check-verifier-output.sh skills/read/scripts/fetch.sh scripts/setup-statusline.sh scripts/setup-english-coaching.sh scripts/setup-anti-patterns.sh skills/check/scripts/run-tests.sh scripts/package-skill.sh
 	echo "bash -n: ok"
 	@if command -v shellcheck >/dev/null 2>&1; then \
 	  shellcheck scripts/*.sh skills/*/scripts/*.sh && echo "shellcheck: ok"; \
@@ -24,6 +24,8 @@ verify-scripts:
 	bash skills/health/scripts/collect-data.sh auto >/tmp/waza-collect-data.out
 	echo "collect-data: ok"
 	rg -n "^=== CONVERSATION SIGNALS ===$$|^=== CONVERSATION EXTRACT ===$$|^=== MCP ACCESS DENIALS ===$$" /tmp/waza-collect-data.out
+	rg -n "^=== AGENT CONFIG SUMMARY ===$$|^=== AGENT INSTRUCTION SURFACE ===$$|^=== CODEX SURFACE ===$$" /tmp/waza-collect-data.out
+	rg -n "^=== AI MAINTAINABILITY SUMMARY ===$$|^maintainability_status: " /tmp/waza-collect-data.out
 
 smoke-statusline:
 	@set -e; \
@@ -145,6 +147,133 @@ smoke-anti-patterns-installer:
 		grep -q 'anti-patterns rule' "$$home_dir/.codex/AGENTS.md"; \
 		echo "Anti-Patterns installer smoke: ok"
 
+smoke-doc-refs:
+	@set -e; \
+		tmpdir=$$(mktemp -d); \
+		root="$$tmpdir/project"; \
+		home_dir="$$tmpdir/home"; \
+		mkdir -p "$$root/docs" "$$root/.claude/rules" "$$root/.claude/skills/demo/references" "$$home_dir/.claude/rules"; \
+		touch "$$root/AGENTS.md" "$$root/docs/existing.md" "$$root/.claude/skills/demo/references/info.md" "$$home_dir/.claude/rules/global.md"; \
+		printf '%s\n' 'See docs/existing.md, @AGENTS.md, and ~/.claude/rules/global.md.' > "$$root/CLAUDE.md"; \
+		printf '%s\n' 'Use docs/existing.md from a nested rule file.' > "$$root/.claude/rules/sample.md"; \
+		printf '%s\n' 'Use references/info.md from the skill directory.' > "$$root/.claude/skills/demo/SKILL.md"; \
+		HOME="$$home_dir" bash skills/health/scripts/check-doc-refs.sh "$$root" >"$$tmpdir/ok.out"; \
+		grep -q 'doc references: ok' "$$tmpdir/ok.out"; \
+		printf '%s\n' 'See docs/existing.md, docs/missing.md, and @MISSING.md.' > "$$root/CLAUDE.md"; \
+		if HOME="$$home_dir" bash skills/health/scripts/check-doc-refs.sh "$$root" >"$$tmpdir/bad.out"; then \
+			echo "doc-ref check should reject missing references"; exit 1; \
+		fi; \
+		grep -q 'MISSING: CLAUDE.md:1 -> docs/missing.md' "$$tmpdir/bad.out"; \
+		grep -q 'MISSING: CLAUDE.md:1 -> @MISSING.md' "$$tmpdir/bad.out"; \
+		echo "doc references smoke: ok"
+
+smoke-agent-context:
+	@set -e; \
+		tmpdir=$$(mktemp -d); \
+		root="$$tmpdir/project"; \
+		home_dir="$$tmpdir/home"; \
+		mkdir -p "$$root" "$$home_dir/.codex"; \
+		printf '%s\n' '## Project' 'Repository Map: source lives in src.' '## Verification' 'Run `make test`.' '## Boundaries' 'Do not rewrite unrelated modules.' > "$$root/AGENTS.md"; \
+		printf '%s\n' 'global codex rule' > "$$home_dir/.codex/AGENTS.md"; \
+		{ \
+			printf '%s\n' 'api_key = "SHOULD_NOT_LEAK"'; \
+			printf '%s\n' 'token = "TOKEN_SHOULD_NOT_LEAK"'; \
+			printf '%s\n' '[features]'; \
+			printf '%s\n' 'hooks = true'; \
+			printf '%s\n' '[plugins."github@openai-curated"]'; \
+			printf '%s\n' 'enabled = true'; \
+			printf '%s\n' "[projects.\"$$root\"]"; \
+			printf '%s\n' 'trust_level = "trusted"'; \
+		} > "$$home_dir/.codex/config.toml"; \
+		HOME="$$home_dir" bash skills/health/scripts/check-agent-context.sh "$$root" summary >"$$tmpdir/context.out"; \
+		grep -q '^agent_instruction_status: PASS$$' "$$tmpdir/context.out"; \
+		grep -q '^codex_status: PASS$$' "$$tmpdir/context.out"; \
+		grep -q '^project_trust: exact:trusted$$' "$$tmpdir/context.out"; \
+		grep -q 'api_key=\[REDACTED\]' "$$tmpdir/context.out"; \
+		grep -q 'token=\[REDACTED\]' "$$tmpdir/context.out"; \
+		if grep -q 'SHOULD_NOT_LEAK' "$$tmpdir/context.out"; then \
+			echo "agent context leaked sensitive config"; exit 1; \
+		fi; \
+		printf '%s\n' '@AGENTS.md' > "$$root/CLAUDE.md"; \
+		HOME="$$home_dir" bash skills/health/scripts/check-agent-context.sh "$$root" summary >"$$tmpdir/delegation.out"; \
+		grep -q '^claude_delegates_to_agents: yes$$' "$$tmpdir/delegation.out"; \
+		grep -q '^conflict_status: PASS$$' "$$tmpdir/delegation.out"; \
+		echo "agent context smoke: ok"
+
+smoke-maintainability:
+	@set -e; \
+		tmpdir=$$(mktemp -d); \
+		good="$$tmpdir/good"; \
+		mkdir -p "$$good/.github/workflows" "$$good/docs" "$$good/src"; \
+		printf '%s\n' '## Project' 'Repository Map: src contains runtime code.' '## Verification' 'Run `make test` before handoff.' '## Boundaries' 'Do not rewrite unrelated modules.' > "$$good/AGENTS.md"; \
+		printf 'test:\n\t@echo test\n' > "$$good/Makefile"; \
+		printf '%s\n' 'name: ci' 'on: [push]' 'jobs:' '  test:' '    runs-on: ubuntu-latest' '    steps:' '      - run: make test' > "$$good/.github/workflows/test.yml"; \
+		printf '%s\n' 'export function ok() { return true }' > "$$good/src/app.ts"; \
+		bash skills/health/scripts/check-maintainability.sh "$$good" summary >"$$tmpdir/good.out"; \
+		grep -q '^maintainability_status: PASS$$' "$$tmpdir/good.out"; \
+		grep -q '^verification_status: PASS$$' "$$tmpdir/good.out"; \
+		bad="$$tmpdir/bad"; \
+		mkdir -p "$$bad/src"; \
+		ROOT="$$bad" python3 -c "import os; from pathlib import Path; p=Path(os.environ['ROOT'])/'src/huge.ts'; p.write_text('\\n'.join(f'const item{i} = {i}; // TODO fix' for i in range(1300)) + '\\n')"; \
+		bash skills/health/scripts/check-maintainability.sh "$$bad" summary >"$$tmpdir/bad.out"; \
+		grep -q '^maintainability_status: FAIL$$' "$$tmpdir/bad.out"; \
+		grep -q 'no agent instruction surface' "$$tmpdir/bad.out"; \
+		grep -q 'no executable verification command discovered' "$$tmpdir/bad.out"; \
+		grep -q 'src/huge.ts' "$$tmpdir/bad.out"; \
+		excluded="$$tmpdir/excluded"; \
+		mkdir -p "$$excluded/src" "$$excluded/node_modules/pkg" "$$excluded/dist" "$$excluded/build"; \
+		printf '%s\n' '## Project' 'Repository Map: src contains runtime code.' '## Verification' 'Run `make test`.' '## Boundaries' 'Avoid generated directories.' > "$$excluded/AGENTS.md"; \
+		printf 'test:\n\t@echo test\n' > "$$excluded/Makefile"; \
+		printf '%s\n' 'export const ok = true;' > "$$excluded/src/app.ts"; \
+		ROOT="$$excluded" python3 -c "import os; from pathlib import Path; root=Path(os.environ['ROOT']); (root/'node_modules/pkg/big.js').write_text('\\n'.join('x' for _ in range(2000)) + '\\n'); (root/'dist/out.js').write_text('\\n'.join('x' for _ in range(2000)) + '\\n'); (root/'build/big.py').write_text('\\n'.join('x' for _ in range(2000)) + '\\n')"; \
+		bash skills/health/scripts/check-maintainability.sh "$$excluded" summary >"$$tmpdir/excluded.out"; \
+		if grep -qE 'node_modules|dist/out.js|build/big.py' "$$tmpdir/excluded.out"; then \
+			echo "maintainability smoke should exclude generated/dependency directories"; exit 1; \
+		fi; \
+		wrapper="$$tmpdir/wrapper"; \
+		mkdir -p "$$wrapper/.github/workflows" "$$wrapper/scripts"; \
+		printf '%s\n' '## Project' 'Repository Map: scripts contains verification.' '## Verification' 'Run `./scripts/check.sh --no-format`.' '## Boundaries' 'Keep checks non-mutating.' > "$$wrapper/AGENTS.md"; \
+		printf 'build:\n\t@echo build\n' > "$$wrapper/Makefile"; \
+		printf '%s\n' '#!/bin/bash' 'exit 0' > "$$wrapper/scripts/check.sh"; \
+		printf '%s\n' 'name: check' 'on: [push]' 'jobs:' '  check:' '    runs-on: ubuntu-latest' '    steps:' '      - run: ./scripts/check.sh --no-format' > "$$wrapper/.github/workflows/check.yml"; \
+		bash skills/health/scripts/check-maintainability.sh "$$wrapper" summary >"$$tmpdir/wrapper.out"; \
+		grep -q '^wrapper_status: WARN$$' "$$tmpdir/wrapper.out"; \
+		grep -q 'multiple verification commands discovered but Makefile lacks check/test/verify wrapper' "$$tmpdir/wrapper.out"; \
+		links="$$tmpdir/links"; \
+		mkdir -p "$$links"; \
+		printf '%s\n' '## Project' 'Repository Map: root docs.' '## Verification' 'Run `make test`.' '## Boundaries' 'Keep docs valid.' > "$$links/AGENTS.md"; \
+		printf 'test:\n\t@echo test\n' > "$$links/Makefile"; \
+		printf '%s\n' 'See [safe remove](journal/2026-03-11-safe-remove-design.md).' > "$$links/SECURITY_AUDIT.md"; \
+		bash skills/health/scripts/check-maintainability.sh "$$links" deep >"$$tmpdir/links.out"; \
+		grep -q '^markdown_link_status: WARN$$' "$$tmpdir/links.out"; \
+		grep -q 'SECURITY_AUDIT.md:1 -> journal/2026-03-11-safe-remove-design.md' "$$tmpdir/links.out"; \
+		echo "maintainability smoke: ok"
+
+smoke-verifier-output:
+	@set -e; \
+		tmpdir=$$(mktemp -d); \
+		root="$$tmpdir/project"; \
+		mkdir -p "$$root/src"; \
+		printf '%s\n' 'golangci-lint run ./cmd/...' '/private/tmp/deleted-worktree/foo.go:12: errcheck failed' > "$$tmpdir/stale.log"; \
+		bash skills/health/scripts/check-verifier-output.sh "$$root" "$$tmpdir/stale.log" >"$$tmpdir/stale.out"; \
+		grep -q '^verifier_output_status: WARN$$' "$$tmpdir/stale.out"; \
+		grep -q '/private/tmp/deleted-worktree/foo.go' "$$tmpdir/stale.out"; \
+		grep -q 'golangci-lint cache clean' "$$tmpdir/stale.out"; \
+		existing_file="/tmp/waza-verifier-existing-$$$$.go"; \
+		touch "$$existing_file"; \
+		printf '%s\n' "go test $$existing_file:1" > "$$tmpdir/existing.log"; \
+		bash skills/health/scripts/check-verifier-output.sh "$$root" "$$tmpdir/existing.log" >"$$tmpdir/existing.out"; \
+		rm -f "$$existing_file"; \
+		grep -q '^verifier_output_status: PASS$$' "$$tmpdir/existing.out"; \
+		if grep -q 'stale external verifier paths detected' "$$tmpdir/existing.out"; then \
+			echo "verifier output should not flag existing tmp paths"; exit 1; \
+		fi; \
+		printf '%s\n' 'unknown verifier failed at /private/tmp/ghost/tool.out' > "$$tmpdir/unknown.log"; \
+		bash skills/health/scripts/check-verifier-output.sh "$$root" "$$tmpdir/unknown.log" >"$$tmpdir/unknown.out"; \
+		grep -q '^verifier_output_status: WARN$$' "$$tmpdir/unknown.out"; \
+		grep -q 'rerun the verifier after removing stale temporary worktrees' "$$tmpdir/unknown.out"; \
+		echo "verifier output smoke: ok"
+
 smoke-verify-skills:
 	@set -e; \
 		tmpdir=$$(mktemp -d); \
@@ -205,6 +334,11 @@ smoke-package:
 		if grep -qiE '(^|/)skill\.md$$' "$$tmpdir/manifest" | grep -cv '^SKILL\.md$$' >/dev/null 2>&1; then true; fi; \
 		test "$$(zipinfo -1 "$$tmpdir/waza.zip" | grep -ciE '(^|/)skill\.md$$')" -eq 1; \
 		grep -qx 'skills/read/scripts/fetch.sh' "$$tmpdir/manifest"; \
+		grep -qx 'skills/health/scripts/check-agent-context.sh' "$$tmpdir/manifest"; \
+		grep -qx 'skills/health/scripts/check-doc-refs.sh' "$$tmpdir/manifest"; \
+		grep -qx 'skills/health/scripts/check-maintainability.sh' "$$tmpdir/manifest"; \
+		grep -qx 'skills/health/scripts/check-verifier-output.sh' "$$tmpdir/manifest"; \
+		grep -qx 'skills/health/agents/inspector-maintainability.md' "$$tmpdir/manifest"; \
 		unzip -p "$$tmpdir/waza.zip" SKILL.md | grep -q 'SKILL: check'; \
 		if unzip -p "$$tmpdir/waza.zip" SKILL.md | grep -q 'skills/check/SKILL.md'; then \
 			echo "package root should not reference nested SKILL.md"; exit 1; \
@@ -221,6 +355,8 @@ smoke-health:
 	printf '%s\n' '{"type":"user","message":{"content":"active session placeholder"}}' > "$$convo_dir/1-active.jsonl"; \
 	HOME="$$tmpdir" bash skills/health/scripts/collect-data.sh auto > "$$tmpdir/health.out"; \
 	grep -q '^=== CONVERSATION SIGNALS ===$$' "$$tmpdir/health.out"; \
+	grep -q '^=== AGENT CONFIG SUMMARY ===$$' "$$tmpdir/health.out"; \
+	grep -q '^=== AI MAINTAINABILITY SUMMARY ===$$' "$$tmpdir/health.out"; \
 	grep -q '^USER CORRECTION: Please do not use em dashes next time\.$$' "$$tmpdir/health.out"; \
 	if grep -q '^USER CORRECTION: Please build a dashboard for sales data\.$$' "$$tmpdir/health.out"; then \
 		echo "false positive correction detected"; exit 1; \
