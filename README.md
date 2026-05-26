@@ -87,10 +87,6 @@ npx skills update -g -y
 
 Marketplace installs use `claude plugin update <skill>`. Claude Desktop users can replace the old skill with the latest [waza.zip](https://github.com/tw93/Waza/releases/latest/download/waza.zip).
 
-**Compatibility**
-
-`/health` now supports Agent Health for Claude Code, Codex, and Pi. It understands `AGENTS.md`, `CLAUDE.md`, Copilot/Gemini instruction files, Codex config summaries, Pi package and skill roots, Claude hooks/MCP when present, verifier logs, and AI maintainability signals. It defaults to summary mode and only deepens when you ask for a deep/full audit or when the summary pass cannot classify the risk.
-
 ## Project Context
 
 Waza keeps the generic programmer habits inside the public skill. `/check` becomes project-aware by reading the target repository's public context and the user's task constraints.
@@ -118,21 +114,17 @@ Each arrow represents a manual user action. Skills don't automatically trigger e
 
 ### Statusline
 
-A minimal statusline for Claude Code: context window, 5-hour quota, and 7-day quota.
+A minimal statusline for Claude Code: context window, 5-hour quota, and 7-day quota. Color-coded by usage, no progress bars, no noise.
 
 <div align="center">
   <img src="https://gw.alipayobjects.com/zos/k/y9/RUgevg.png" width="1000" />
 </div>
 
-Color coding: green below 70%, yellow at 70-85%, red above 85% for context; blue, magenta, red for quota thresholds. No progress bars, no noise.
-
 ```bash
 curl -sL https://raw.githubusercontent.com/tw93/Waza/v3.26.0/scripts/setup-statusline.sh | bash
 ```
 
-**Codex**
-
-Codex has native statusline items. Add to `~/.codex/config.toml`:
+**Codex** has native statusline items. Add to `~/.codex/config.toml`:
 
 ```toml
 [tui]
@@ -140,7 +132,7 @@ status_line = ["model-with-reasoning", "current-dir", "context-used", "five-hour
 status_line_use_colors = true
 ```
 
-Note: Codex shows remaining quota, while the Claude Code statusline above shows used percentage. Upstream does not yet offer used-percentage items (e.g. `five-hour-used` / `weekly-used`).
+Codex shows remaining quota; the Claude Code statusline above shows used percentage (upstream does not yet expose `five-hour-used` / `weekly-used`).
 
 ### English Coaching
 
@@ -181,15 +173,13 @@ For Claude Desktop, delete Waza from Customize > Skills. For Codex rule installs
 
 ## Background
 
-Tools like Superpowers and gstack are impressive, but they are heavy. Too many skills, too much configuration, too steep a learning curve for engineers who just want to get things done.
+Tools like Superpowers and gstack are impressive but heavy: too many skills, too much configuration, too steep a learning curve.
 
-There's also a subtler problem. Every rule the author writes becomes a ceiling. The model can only do what the instructions say and can't go further. Waza goes the other direction. Each skill sets a clear goal and the constraints that matter, then steps back. As models improve, that restraint pays compound interest.
+Every rule the author writes is also a ceiling. The model can only do what the instructions say. Waza goes the other way: each skill sets a clear goal and the constraints that matter, then steps back. As models improve, that restraint pays compound interest.
 
-Eight skills for the habits that actually matter. Each does one thing, has a clear trigger, and stays out of the way. Not complete by design, just the right amount done well.
+Eight skills for the habits that actually matter. Each does one thing, has a clear trigger, and stays out of the way. Built from real projects, refined through 300+ sessions across 7 projects. Every gotcha traces to a real failure.
 
-Built from patterns across real projects, refined through actual use. Every gotcha traces to a real failure: a wrong code path that took four rounds to find, a release posted before artifacts were uploaded, a server restarted eight times without reading the error. 30 days, 300+ sessions, 7 projects, 500 hours.
-
-The `/health` skill grew from the six-layer Claude Code framework described in [this post](https://tw93.fun/en/2026-03-12/claude.html), and now extends it into Agent Health for Codex, Claude Code, Pi, verifier surfaces, and AI maintainability.
+The `/health` skill grew from the six-layer Claude Code framework described in [this post](https://tw93.fun/en/2026-03-12/claude.html), and now covers Codex, Claude Code, Pi, verifier surfaces, and AI maintainability.
 
 ## Support
 
